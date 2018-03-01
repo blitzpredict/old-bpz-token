@@ -59,17 +59,6 @@ contract BPZSmartTokenSale is BaseContract, Owned, TokenRetriever {
         _;
     }
 
-    modifier onlyAfterSale() {
-        require(initialized);
-
-        bool allTokensSold = tokensSold >= totalSellableTokens;
-        bool afterEndTime = now >= endTime;
-
-        require(allTokensSold || afterEndTime);
-
-        _;
-    }
-
     /// @dev Fallback function -- just purchase tokens
     function ()
         external

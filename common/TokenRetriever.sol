@@ -9,9 +9,9 @@ contract TokenRetriever is Owned {
     {
     }
 
-    /// @dev Failsafe mechanism - Allows owner to retreive tokens from the contract
+    /// @dev Failsafe mechanism - Allows owner to retrieve tokens from the contract
     /// @param _tokenContract The address of ERC20 compatible token
-    function retreiveTokens(address _tokenContract)
+    function retrieveTokens(address _tokenContract)
         public
         onlyOwner
     {
