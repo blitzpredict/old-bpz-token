@@ -13,7 +13,7 @@ contract SmartToken is BaseContract, Owned, TokenRetriever, ERC20Token {
     // triggered when a smart token is deployed
     // the _token address is defined for forward compatibility,
     // in case we want to trigger the event from a factory
-    event NewSmartToken(address _token);
+    event NewSmartToken(address indexed _token);
 
     // triggered when the total supply is increased
     event Issuance(uint256 _amount);

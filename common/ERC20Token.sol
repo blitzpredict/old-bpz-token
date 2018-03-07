@@ -16,8 +16,8 @@ contract ERC20Token is BaseContract {
     mapping (address => uint256) public balanceOf;
     mapping (address => mapping (address => uint256)) public allowance;
 
-    event Transfer(address _from, address _to, uint256 _value);
-    event Approval(address _owner, address _spender, uint256 _value);
+    event Transfer(address indexed _from, address indexed _to, uint256 _value);
+    event Approval(address indexed _owner, address indexed _spender, uint256 _value);
 
     /// @dev constructor
     /// @param _name        token name

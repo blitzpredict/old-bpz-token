@@ -5,23 +5,21 @@ import "./common/Owned.sol";
 import "./common/TokenRetriever.sol";
 import "./BPZSmartToken.sol";
 import "./VestingManager.sol";
-import "./IOldTokenSale.sol";
 
 // solhint-disable not-rely-on-time
 
 /// @title BPC Smart Token sale
-contract BPZSmartTokenSale is BaseContract, Owned, TokenRetriever {
+contract OldBPZSmartTokenSale is BaseContract, Owned, TokenRetriever {
     using SafeMath for uint256;
 
-    IOldTokenSale public oldTokenSale;
     BPZSmartToken public bpz;
     bool public initialized = false;
-    bool public firstSaleIssuesComplete = false;
 
     uint256 public startTime = 0;
     uint256 public endTime = 0;
     uint256 public tokensPerEther = 25000;
     uint256 public tokensSold = 0;
+    mapping(address => uint256) public whitelist;
     mapping(address => uint256) public tokensPurchased;
 
     address public companyIssuedTokensAddress;
@@ -42,6 +40,7 @@ contract BPZSmartTokenSale is BaseContract, Owned, TokenRetriever {
     uint256 public presaleTokensSold;
     uint256 public totalSellableTokens;
 
+    event Whitelisted(address indexed _participant, uint256 _contributionLimit);
     event TokensPurchased(address indexed _to, uint256 _tokens);
 
     modifier onlyDuringSale() {
@@ -80,20 +79,17 @@ contract BPZSmartTokenSale is BaseContract, Owned, TokenRetriever {
     /// @dev Initializes all the various fields necessary for running the sale.
     /// @param _bpz address The address of the BPZ token.
     /// @param _vestingManager address The address of the VestingManager.
-    /// @param _oldTokenSale address The address of the old token sale contract.
     /// @param _startTime uint256 The start time of the token sale.
     /// @param _endTime uint256 The end time of the token sale.
     /// @param _presaleTokensSold uint256 The number of tokens sold in presale, in wei.
     /// @param _addresses address[] The various addresses necessary for running the sale.
-    function initialize(address _bpz, address _vestingManager, address _oldTokenSale, uint256 _startTime, uint256 _endTime, uint256 _presaleTokensSold, address[] _addresses)
+    function initialize(address _bpz, address _vestingManager, uint256 _startTime, uint256 _endTime, uint256 _presaleTokensSold, address[] _addresses)
         external
         onlyOwner
         onlyIf(!initialized)
         onlyIf(_startTime > now && _endTime > _startTime)
         onlyIf(_addresses.length == 5)
     {
-        oldTokenSale = IOldTokenSale(_oldTokenSale);
-
         bpz = BPZSmartToken(_bpz);
         bpz.acceptOwnership();
 
@@ -126,20 +122,16 @@ contract BPZSmartTokenSale is BaseContract, Owned, TokenRetriever {
         initialized = true;
     }
 
-    /// @dev Issues tokens to all of the buyers from the first token sale.
-    /// @param _buyers address[] The addresses of the buyers from the first token sale.
-    /// @param _amounts uint256[] The number of tokens purchased by the first buyer, in wei.
-    function issueTokensToFirstSaleBuyers(address[] _buyers, uint256[] _amounts)
+    /// @dev Adds or modifies items in the whitelist
+    function updateWhitelist(address[] participants, uint256[] contributionLimits)
         external
         onlyOwner
-        onlyIf(!firstSaleIssuesComplete)
-        onlyIf(_buyers.length == _amounts.length)
+        onlyIf(participants.length == contributionLimits.length)
     {
-        for (uint256 i = 0; i < _buyers.length; ++i) {
-            issuePurchasedTokens(_buyers[i], _amounts[i]);
+        for (uint256 i = 0; i < participants.length; ++i) {
+            whitelist[participants[i]] = contributionLimits[i];
+            Whitelisted(participants[i], contributionLimits[i]);
         }
-
-        firstSaleIssuesComplete = true;
     }
 
     /// @dev Proposes to transfer control of the BPZSmartToken contract to a new owner.
@@ -198,7 +190,7 @@ contract BPZSmartTokenSale is BaseContract, Owned, TokenRetriever {
         onlyDuringSale
         greaterThanZero(msg.value)
     {
-        uint256 purchaseLimit = oldTokenSale.whitelist(msg.sender).mul(tokensPerEther);
+        uint256 purchaseLimit = whitelist[msg.sender].mul(tokensPerEther);
         uint256 purchaseLimitRemaining = purchaseLimit.sub(tokensPurchased[msg.sender]);
         require(purchaseLimitRemaining > 0);
 
